@@ -19,9 +19,10 @@ data class UrlKeeperUiState(
     val message: String? = null,
     val isSaving: Boolean = false,
     val isExporting: Boolean = false,
-    val isSavingBackupSettings: Boolean = false
+    val isSavingBackupSettings: Boolean = false,
+    val isSyncingBackup: Boolean = false
 ) {
-    val isBusy: Boolean = isSaving || isExporting || isSavingBackupSettings
+    val isBusy: Boolean = isSaving || isExporting || isSavingBackupSettings || isSyncingBackup
 }
 
 class MainViewModel(private val repository: UrlRepository) : ViewModel() {
@@ -94,15 +95,33 @@ class MainViewModel(private val repository: UrlRepository) : ViewModel() {
         viewModelScope.launch {
             transientState.update { it.copy(isSavingBackupSettings = true, message = null) }
             runCatching { repository.saveBackupSettings(settings) }
-                .onSuccess { gistId ->
-                    val suffix = gistId?.let { "\nGist: $it" }.orEmpty()
+                .onSuccess {
                     transientState.update {
-                        it.copy(isSavingBackupSettings = false, message = "备份设置已保存$suffix")
+                        it.copy(isSavingBackupSettings = false, message = "备份设置已保存")
                     }
                 }
                 .onFailure { throwable ->
                     transientState.update {
                         it.copy(isSavingBackupSettings = false, message = throwable.message ?: "备份设置保存失败")
+                    }
+                }
+        }
+    }
+
+    fun syncBackup(settings: BackupSettings) {
+        if (transientState.value.isSyncingBackup) return
+
+        viewModelScope.launch {
+            transientState.update { it.copy(isSyncingBackup = true, message = null) }
+            runCatching { repository.syncBackupNow(settings) }
+                .onSuccess { message ->
+                    transientState.update {
+                        it.copy(isSyncingBackup = false, message = message)
+                    }
+                }
+                .onFailure { throwable ->
+                    transientState.update {
+                        it.copy(isSyncingBackup = false, message = throwable.message ?: "手动同步失败")
                     }
                 }
         }

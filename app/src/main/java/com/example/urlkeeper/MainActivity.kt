@@ -125,8 +125,14 @@ private fun UrlKeeperApp(viewModel: MainViewModel, initialSharedText: String?) {
                     }
                 },
                 actions = {
+                    IconButton(
+                        onClick = { viewModel.syncBackup(state.backupSettings) },
+                        enabled = !state.isBusy
+                    ) {
+                        Icon(Icons.Rounded.CloudSync, contentDescription = "立即同步")
+                    }
                     IconButton(onClick = { showBackupDialog = true }) {
-                        Icon(Icons.Rounded.CloudSync, contentDescription = "Gitee 备份设置")
+                        Icon(Icons.Rounded.CloudSync, contentDescription = "GitHub 备份设置")
                     }
                     IconButton(
                         onClick = viewModel::exportAndClear,
@@ -179,6 +185,7 @@ private fun UrlKeeperApp(viewModel: MainViewModel, initialSharedText: String?) {
         BackupDialog(
             settings = state.backupSettings,
             isSaving = state.isSavingBackupSettings,
+            isSyncing = state.isSyncingBackup,
             onDismiss = { showBackupDialog = false },
             onSave = { settings ->
                 viewModel.saveBackupSettings(settings)
@@ -271,6 +278,7 @@ private fun Composer(
 private fun BackupDialog(
     settings: BackupSettings,
     isSaving: Boolean,
+    isSyncing: Boolean,
     onDismiss: () -> Unit,
     onSave: (BackupSettings) -> Unit
 ) {
@@ -282,7 +290,7 @@ private fun BackupDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Gitee Gist 备份") },
+        title = { Text("GitHub Gist 备份") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -293,7 +301,7 @@ private fun BackupDialog(
                     value = token,
                     onValueChange = { token = it },
                     enabled = enabled,
-                    label = { Text("Gitee access token") },
+                    label = { Text("GitHub personal access token") },
                     singleLine = true,
                     visualTransformation = if (showToken) VisualTransformation.None else PasswordVisualTransformation()
                 )
@@ -319,12 +327,12 @@ private fun BackupDialog(
         confirmButton = {
             Button(
                 onClick = { onSave(BackupSettings(enabled, token, gistId, fileName)) },
-                enabled = !isSaving,
+                enabled = !isSaving && !isSyncing,
                 shape = RoundedCornerShape(8.dp)
             ) { Text("保存") }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss, enabled = !isSaving) { Text("取消") }
+            TextButton(onClick = onDismiss, enabled = !isSaving && !isSyncing) { Text("取消") }
         }
     )
 }

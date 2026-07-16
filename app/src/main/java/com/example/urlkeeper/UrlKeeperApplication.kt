@@ -2,7 +2,7 @@ package com.example.urlkeeper
 
 import android.app.Application
 import com.example.urlkeeper.backup.BackupSettingsStore
-import com.example.urlkeeper.backup.GiteeGistClient
+import com.example.urlkeeper.backup.GitHubGistClient
 import com.example.urlkeeper.data.AppDatabase
 import com.example.urlkeeper.export.OneTabExporter
 
@@ -13,7 +13,7 @@ class UrlKeeperApplication : Application() {
             dao = database.urlDao(),
             exporter = OneTabExporter(this),
             backupSettingsStore = BackupSettingsStore(this),
-            gistClient = GiteeGistClient()
+            gistClient = GitHubGistClient()
         )
     }
 }
